@@ -13,6 +13,7 @@ PclMidRowDetection::PclMidRowDetection(ros::NodeHandle &nh, ros::NodeHandle &nh_
 void PclMidRowDetection::initialize()
 {
     nh_private_.param<double>("rate", rate_, 50);
+    nh_private_.param<std::string>("input_pointcloud_topic", input_cloud_topic_, "/rslidar_points");
 
     filtered_cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2> ("filtered_cloud", 1);
     flat_cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2> ("flat_cloud", 1);
@@ -21,7 +22,6 @@ void PclMidRowDetection::initialize()
     marker_pub_left_ = nh_.advertise<visualization_msgs::Marker>("left_line", 1);
     marker_pub_right_ = nh_.advertise<visualization_msgs::Marker>("right_line", 1);
 
-    input_cloud_topic_ = "/rslidar_points";
     input_pointcloud_sub_ = nh_.subscribe( input_cloud_topic_, 1, &PclMidRowDetection::inputCloudCallback, this);
 
     control_timer_ = nh_.createTimer(ros::Duration(ros::Rate(rate_)), &PclMidRowDetection::loop, this);
@@ -32,7 +32,6 @@ void PclMidRowDetection::initialize()
     max_line_angle_deg_ = 10;
     n_detected_lines_pub_ = nh_.advertise<std_msgs::Int32>("number_of_detected_lines", 1);
     line_distance_threshold_ = 0.4;
-    lidar_frame_id_ = "/rslidar";
 }
 
 void PclMidRowDetection::initializeKeepBox()
@@ -51,7 +50,8 @@ void PclMidRowDetection::initializeRemoveBox()
 
 void PclMidRowDetection::inputCloudCallback (const sensor_msgs::PointCloud2ConstPtr &ros_msg)
 {
-	pcl::fromROSMsg(*ros_msg, *input_cloud_);
+    pcl::fromROSMsg(*ros_msg, *input_cloud_);
+    lidar_frame_id_ = ros_msg->header.frame_id;
 }
 
 void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
@@ -224,7 +224,7 @@ void Line2d::calcAngleFromDirection()
 void Line2d::publish(const ros::Publisher &marker_pub, const std::string &frame_id, double marker_line_length) const
 {
     visualization_msgs::Marker line_strip;
-    line_strip.header.frame_id = "/rslidar"; //TODO: relative
+    line_strip.header.frame_id = frame_id;
     line_strip.header.stamp = ros::Time::now();
     line_strip.ns = "points_and_lines";
     line_strip.action = visualization_msgs::Marker::ADD;

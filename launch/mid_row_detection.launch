@@ -2,9 +2,10 @@
 <launch>
     <arg name="rviz" default="true"/>
     <arg name="ros_rate" default="50.0"/>
+    <arg name="input_pointcloud_topic" default="/rslidar_points"/>
 
     <node pkg="vineyard_midrow_detection" type="vineyard_midrow_detection" name="vineyard_midrow_detection" args="
-        _rate:=$(arg ros_rate)" output="screen"/>
+        _rate:=$(arg ros_rate) _input_pointcloud_topic:=$(arg input_pointcloud_topic)" output="screen"/>
 
     <node type="rviz" name="rviz" pkg="rviz" args="-d $(find vineyard_midrow_detection)/rviz/mid_row_config.rviz" if="$(arg rviz)"/>
     

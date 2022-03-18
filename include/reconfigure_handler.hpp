@@ -23,7 +23,14 @@ public:
   ReconfigureHandler(T t_defaultConfig, std::string configName)
     : m_configServer(m_configMutex, ros::NodeHandle(configName))
   {
-    m_configServer.updateConfig(std::move(t_defaultConfig));
+    m_configServer.updateConfig(std::move(t_defaultConfig)); //zasto ova linija??
+    auto paramCallback = boost::bind(&ReconfigureHandler::paramCallback, this, _1, _2);
+    m_configServer.setCallback(paramCallback);
+  }
+  
+  ReconfigureHandler(std::string configName)
+    : m_configServer(m_configMutex, ros::NodeHandle(configName))
+  {
     auto paramCallback = boost::bind(&ReconfigureHandler::paramCallback, this, _1, _2);
     m_configServer.setCallback(paramCallback);
   }

@@ -5,7 +5,7 @@ PclMidRowDetection::PclMidRowDetection(ros::NodeHandle &nh, ros::NodeHandle &nh_
     :   input_cloud_(boost::make_shared<PointCloudXYZ>()), 
         filtered_cloud_(boost::make_shared<PointCloudXYZ>()),
         flat_cloud_(boost::make_shared<PointCloudXYZ>()), 
-        nh_(nh), rate_(50), nh_private_(nh_private) 
+        nh_(nh), rate_(50), nh_private_(nh_private), reconfigure_handler_("vineyard_midrow_detection") 
 {
     initialize();
 }
@@ -25,27 +25,9 @@ void PclMidRowDetection::initialize()
     input_pointcloud_sub_ = nh_.subscribe( input_cloud_topic_, 1, &PclMidRowDetection::inputCloudCallback, this);
 
     control_timer_ = nh_.createTimer(ros::Duration(ros::Rate(rate_)), &PclMidRowDetection::loop, this);
-    
-    initializeKeepBox();
-    initializeRemoveBox();
 
-    max_line_angle_deg_ = 10;
     n_detected_lines_pub_ = nh_.advertise<std_msgs::Int32>("number_of_detected_lines", 1);
     line_distance_threshold_ = 0.4;
-}
-
-void PclMidRowDetection::initializeKeepBox()
-{
-    keep_box_.x_bounds_ = Bounds(-4.0, 4.0);
-    keep_box_.y_bounds_ = Bounds(-2.0, 2.0);
-    keep_box_.z_bounds_ = Bounds(0.0, 5.0);
-}
-
-void PclMidRowDetection::initializeRemoveBox()
-{
-    remove_box_.x_bounds_ = Bounds(-0.7, -0.25);
-    remove_box_.y_bounds_ = Bounds(-0.8, 0.5);
-    remove_box_.z_bounds_ = Bounds(-0.3, 0.3);
 }
 
 void PclMidRowDetection::inputCloudCallback (const sensor_msgs::PointCloud2ConstPtr &ros_msg)
@@ -54,8 +36,33 @@ void PclMidRowDetection::inputCloudCallback (const sensor_msgs::PointCloud2Const
     lidar_frame_id_ = ros_msg->header.frame_id;
 }
 
+void PclMidRowDetection::updateReconfigurableParams()
+{
+    auto reconfigure_data = reconfigure_handler_.getData();
+    line_distance_threshold_ = reconfigure_data.line_detection_distance_threshold;
+    max_line_angle_deg_ = reconfigure_data.line_detection_max_angle;
+    line_detection_min_points_n_ = reconfigure_data.line_detection_min_n_points;
+
+
+    remove_box_.x_bounds_ = Bounds( reconfigure_data.remove_box_lower_bound_x, 
+                                    reconfigure_data.remove_box_upper_bound_x );
+    remove_box_.y_bounds_ = Bounds( reconfigure_data.remove_box_lower_bound_y, 
+                                    reconfigure_data.remove_box_upper_bound_y );
+    remove_box_.z_bounds_ = Bounds( reconfigure_data.remove_box_lower_bound_z, 
+                                    reconfigure_data.remove_box_upper_bound_z );
+
+    keep_box_.x_bounds_ = Bounds(   reconfigure_data.keep_box_lower_bound_x, 
+                                    reconfigure_data.keep_box_upper_bound_x );
+    keep_box_.y_bounds_ = Bounds(   reconfigure_data.keep_box_lower_bound_y, 
+                                    reconfigure_data.keep_box_upper_bound_y );
+    keep_box_.z_bounds_ = Bounds(   reconfigure_data.keep_box_lower_bound_z, 
+                                    reconfigure_data.keep_box_upper_bound_z );
+}
+
 void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
 {
+    updateReconfigurableParams();
+
     pcl::copyPointCloud(*input_cloud_, *filtered_cloud_);
 
     cropBox(filtered_cloud_, remove_box_, true); //Delete points in remove_box_

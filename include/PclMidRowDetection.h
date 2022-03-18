@@ -24,7 +24,7 @@
 #include <vineyard_midrow_detection/MidrowDetectionConfig.h>
 
 using PointCloudXYZ = pcl::PointCloud<pcl::PointXYZ>;
-
+using reconfigureCfg = vineyard_midrow_detection::MidrowDetectionConfig;
 
 struct Bounds
 {
@@ -74,7 +74,9 @@ public:
 private:
     PointCloudXYZ::Ptr input_cloud_, flat_cloud_, filtered_cloud_;
     Box3d keep_box_, remove_box_;
+
     double line_distance_threshold_, max_line_angle_deg_;
+    uint32_t line_detection_min_points_n_;
 
     std::string lidar_frame_id_;
     
@@ -111,4 +113,8 @@ private:
     RowBorders selectBorders(const std::vector<Line2d> &lines) const;
 
     static void publishInt32(const ros::Publisher &int_pub, int input_int);
+
+    ros_util::ReconfigureHandler<reconfigureCfg> reconfigure_handler_;
+    void updateReconfigurableParams();
+    
 };

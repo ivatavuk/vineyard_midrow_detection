@@ -1,5 +1,5 @@
 # Vineyard Row Middle Detection
-ROS package for detecting the middle of the passage between the row of grapevines.
+ROS package for detecting the middle of the passage between two rows of grapevines.
 
 Point Cloud Library (PCL) is used to detect the border rows from a 3D LiDAR scan. 
 

@@ -11,9 +11,10 @@ Method consists of:
 
 1. Removing the pointcloud points inside the Remove Box 
 2. Removing the pointcloud points outside the Keep Box
-3. Detecting all the lines subject to max_angle and min_points parameters
-4. Selecting right and left borders from detected lines
-5. Calculating the middle line and publishing it to the middle_line topic  
+3. Flattening the remaining pointcloud (setting the z component to zero)
+4. Detecting all the lines subject to max_angle and min_points parameters
+5. Selecting right and left borders from detected lines
+6. Calculating the middle line and publishing it to the middle_line topic  
 
 ## Installation
 

@@ -30,35 +30,6 @@ void PclMidRowDetection::initialize()
     line_distance_threshold_ = 0.4;
 }
 
-void PclMidRowDetection::inputCloudCallback (const sensor_msgs::PointCloud2ConstPtr &ros_msg)
-{
-    pcl::fromROSMsg(*ros_msg, *input_cloud_);
-    lidar_frame_id_ = ros_msg->header.frame_id;
-}
-
-void PclMidRowDetection::updateReconfigurableParams()
-{
-    auto reconfigure_data = reconfigure_handler_.getData();
-    line_distance_threshold_ = reconfigure_data.line_detection_distance_threshold;
-    max_line_angle_deg_ = reconfigure_data.line_detection_max_angle;
-    line_detection_min_points_n_ = reconfigure_data.line_detection_min_n_points;
-
-
-    remove_box_.x_bounds_ = Bounds( reconfigure_data.remove_box_lower_bound_x, 
-                                    reconfigure_data.remove_box_upper_bound_x );
-    remove_box_.y_bounds_ = Bounds( reconfigure_data.remove_box_lower_bound_y, 
-                                    reconfigure_data.remove_box_upper_bound_y );
-    remove_box_.z_bounds_ = Bounds( reconfigure_data.remove_box_lower_bound_z, 
-                                    reconfigure_data.remove_box_upper_bound_z );
-
-    keep_box_.x_bounds_ = Bounds(   reconfigure_data.keep_box_lower_bound_x, 
-                                    reconfigure_data.keep_box_upper_bound_x );
-    keep_box_.y_bounds_ = Bounds(   reconfigure_data.keep_box_lower_bound_y, 
-                                    reconfigure_data.keep_box_upper_bound_y );
-    keep_box_.z_bounds_ = Bounds(   reconfigure_data.keep_box_lower_bound_z, 
-                                    reconfigure_data.keep_box_upper_bound_z );
-}
-
 void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
 {
     updateReconfigurableParams();
@@ -88,6 +59,35 @@ void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
     border_lines_.right_line_.publish(marker_pub_right_, lidar_frame_id_);
     border_lines_.left_line_.publish(marker_pub_left_, lidar_frame_id_);
     mid_line.publish(marker_pub_mid_, lidar_frame_id_);
+}
+
+void PclMidRowDetection::inputCloudCallback (const sensor_msgs::PointCloud2ConstPtr &ros_msg)
+{
+    pcl::fromROSMsg(*ros_msg, *input_cloud_);
+    lidar_frame_id_ = ros_msg->header.frame_id;
+}
+
+void PclMidRowDetection::updateReconfigurableParams()
+{
+    auto reconfigure_data = reconfigure_handler_.getData();
+    line_distance_threshold_ = reconfigure_data.line_detection_distance_threshold;
+    max_line_angle_deg_ = reconfigure_data.line_detection_max_angle;
+    line_detection_min_points_n_ = reconfigure_data.line_detection_min_n_points;
+
+
+    remove_box_.x_bounds_ = Bounds( reconfigure_data.remove_box_lower_bound_x, 
+                                    reconfigure_data.remove_box_upper_bound_x );
+    remove_box_.y_bounds_ = Bounds( reconfigure_data.remove_box_lower_bound_y, 
+                                    reconfigure_data.remove_box_upper_bound_y );
+    remove_box_.z_bounds_ = Bounds( reconfigure_data.remove_box_lower_bound_z, 
+                                    reconfigure_data.remove_box_upper_bound_z );
+
+    keep_box_.x_bounds_ = Bounds(   reconfigure_data.keep_box_lower_bound_x, 
+                                    reconfigure_data.keep_box_upper_bound_x );
+    keep_box_.y_bounds_ = Bounds(   reconfigure_data.keep_box_lower_bound_y, 
+                                    reconfigure_data.keep_box_upper_bound_y );
+    keep_box_.z_bounds_ = Bounds(   reconfigure_data.keep_box_lower_bound_z, 
+                                    reconfigure_data.keep_box_upper_bound_z );
 }
 
 void PclMidRowDetection::publishInt32(const ros::Publisher &int_pub, int input_int)

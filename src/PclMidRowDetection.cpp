@@ -136,7 +136,7 @@ std::vector<Line2d> PclMidRowDetection::findLines(PointCloudXYZ::Ptr input_cloud
     seg.setModelType (pcl::SACMODEL_LINE);
     seg.setMethodType (pcl::SAC_RANSAC);
     seg.setMaxIterations (100);
-    while(temp_cloud->points.size() > 100) //TODO: reconfigurable parameter
+    while(temp_cloud->points.size() > line_detection_min_points_n_)
     {
         seg.setInputCloud (temp_cloud);
         seg.setDistanceThreshold (line_distance_threshold_);
@@ -183,7 +183,7 @@ RowBorders PclMidRowDetection::selectBorders(const std::vector<Line2d> &lines) c
             right_line_index = i;
         } 
     }
-    
+
     if (right_line_index == -1 || left_line_index == -1) //right or left line don't exist
     {
         return RowBorders();

@@ -1,3 +1,6 @@
+#ifndef PCLMIDROWDETECTION_HPP
+#define PCLMIDROWDETECTION_HPP
+
 #include <ros/ros.h>
 
 #include <pcl_ros/point_cloud.h>
@@ -118,3 +121,5 @@ private:
     void updateReconfigurableParams();
     
 };
+
+#endif /* PCLMIDROWDETECTION_HPP */

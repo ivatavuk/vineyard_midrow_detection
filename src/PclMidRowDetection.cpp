@@ -169,23 +169,21 @@ RowBorders PclMidRowDetection::selectBorders(const std::vector<Line2d> &lines) c
         if(abs(lines[i].angle_deg_) > max_line_angle_deg_) //Disregard lines with large angles
             continue;
 
-        if (current_y < 0) //is current line to the left?
+        //Is the current line the closest line to the left?        
+        if (current_y < 0 && current_y > max_negative_y)
         {
-            if (current_y > max_negative_y) //is it the closest line to the left?
-            {
-                max_negative_y = current_y;
-                left_line_index = i;
-            } 
-        }
-        else //is current line to the right?
+            max_negative_y = current_y;
+            left_line_index = i;
+        } 
+        
+        //Is the current line the closest line to the right?
+        if (current_y > 0 && current_y < min_positive_y) 
         {
-            if (current_y < min_positive_y) //is it the closest line to the right?
-            {
-                min_positive_y = current_y;
-                right_line_index = i;
-            } 
-        }
+            min_positive_y = current_y;
+            right_line_index = i;
+        } 
     }
+    
     if (right_line_index == -1 || left_line_index == -1) //right or left line don't exist
     {
         return RowBorders();

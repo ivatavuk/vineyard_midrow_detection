@@ -35,7 +35,7 @@ struct Bounds
   Bounds(double lower_bound, double upper_bound)
     :lower_(lower_bound), upper_(upper_bound) {};
 
-  double upper_, lower_;
+  double lower_, upper_;
 };
 
 struct Box3d
@@ -62,8 +62,8 @@ struct Line2d
 
 struct RowBorders
 {
-  Line2d right_line_, left_line_;
   bool empty_;
+  Line2d left_line_, right_line_;
   RowBorders();
   RowBorders(Line2d right_line, Line2d left_line);
   bool isEmpty() const { return empty_; };
@@ -75,7 +75,7 @@ class PclMidRowDetection
 public:
     PclMidRowDetection(ros::NodeHandle &nh, ros::NodeHandle &nh_private);
 private:
-  PointCloudXYZ::Ptr input_cloud_, flat_cloud_, filtered_cloud_;
+  PointCloudXYZ::Ptr input_cloud_, filtered_cloud_, flat_cloud_;
   Box3d keep_box_, remove_box_;
 
   double line_distance_threshold_, max_line_angle_deg_;
@@ -83,8 +83,8 @@ private:
 
   std::string lidar_frame_id_;
   
-  ros::NodeHandle nh_, nh_private_;
   double rate_;
+  ros::NodeHandle nh_, nh_private_;
   ros::Publisher  filtered_cloud_pub_, flat_cloud_pub_, marker_pub_mid_, 
                   marker_pub_left_, marker_pub_right_,
                   n_detected_lines_pub_;

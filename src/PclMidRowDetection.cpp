@@ -5,7 +5,7 @@ PclMidRowDetection::PclMidRowDetection(ros::NodeHandle &nh, ros::NodeHandle &nh_
   : input_cloud_(boost::make_shared<PointCloudXYZ>()), 
     filtered_cloud_(boost::make_shared<PointCloudXYZ>()),
     flat_cloud_(boost::make_shared<PointCloudXYZ>()), 
-    nh_(nh), rate_(50), nh_private_(nh_private), reconfigure_handler_("vineyard_midrow_detection") 
+    rate_(50), nh_(nh), nh_private_(nh_private), reconfigure_handler_("vineyard_midrow_detection") 
 {
     initialize();
 }

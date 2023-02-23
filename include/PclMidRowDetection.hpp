@@ -20,6 +20,7 @@
 #include <Eigen/Dense>
 
 #include <visualization_msgs/Marker.h>
+#include <geometry_msgs/PointStamped.h>
 #include <std_msgs/Int32.h>
 
 #include "string"
@@ -73,13 +74,16 @@ struct RowBorders
 class PclMidRowDetection
 {
 public:
-    PclMidRowDetection(ros::NodeHandle &nh, ros::NodeHandle &nh_private);
+  PclMidRowDetection(ros::NodeHandle &nh, ros::NodeHandle &nh_private);
 private:
   PointCloudXYZ::Ptr input_cloud_, filtered_cloud_, flat_cloud_;
   Box3d keep_box_, remove_box_;
 
   double line_distance_threshold_, max_line_angle_deg_;
   uint32_t line_detection_min_points_n_;
+
+
+  double pure_pursuit_point_distance_;
 
   std::string lidar_frame_id_;
   
@@ -88,6 +92,7 @@ private:
   ros::Publisher  filtered_cloud_pub_, flat_cloud_pub_, marker_pub_mid_, 
                   marker_pub_left_, marker_pub_right_,
                   n_detected_lines_pub_;
+  ros::Publisher pure_pursuit_point_pub_;
   ros::Subscriber input_pointcloud_sub_;
 
   std::string input_cloud_topic_;
@@ -119,7 +124,8 @@ private:
 
   ros_util::ReconfigureHandler<reconfigureCfg> reconfigure_handler_;
   void updateReconfigurableParams();
-    
+
+  void publishPurePursuitPoint(Line2d mid_line) const;
 };
 
 #endif /* PCLMIDROWDETECTION_HPP */

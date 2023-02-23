@@ -22,12 +22,15 @@ void PclMidRowDetection::initialize()
   marker_pub_left_ = nh_.advertise<visualization_msgs::Marker>("left_line", 1);
   marker_pub_right_ = nh_.advertise<visualization_msgs::Marker>("right_line", 1);
 
+  pure_pursuit_point_pub_ = nh_.advertise<geometry_msgs::PointStamped>("pure_pursuit_point", 1);
+
   input_pointcloud_sub_ = nh_.subscribe( input_cloud_topic_, 1, &PclMidRowDetection::inputCloudCallback, this);
 
   control_timer_ = nh_.createTimer(ros::Duration(ros::Rate(rate_)), &PclMidRowDetection::loop, this);
 
   n_detected_lines_pub_ = nh_.advertise<std_msgs::Int32>("number_of_detected_lines", 1);
   line_distance_threshold_ = 0.4;
+  pure_pursuit_point_distance_ = 1.5;
 }
 
 void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
@@ -59,6 +62,7 @@ void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
   border_lines_.right_line_.publish(marker_pub_right_, lidar_frame_id_);
   border_lines_.left_line_.publish(marker_pub_left_, lidar_frame_id_);
   mid_line.publish(marker_pub_mid_, lidar_frame_id_);
+  publishPurePursuitPoint(mid_line);
 }
 
 void PclMidRowDetection::inputCloudCallback (const sensor_msgs::PointCloud2ConstPtr &ros_msg)
@@ -198,6 +202,20 @@ void PclMidRowDetection::extractIndices(PointCloudXYZ::Ptr pointcloud,
   extract.setIndices(indices);
   extract.setNegative(true);
   extract.filter(*pointcloud);
+}
+
+void PclMidRowDetection::publishPurePursuitPoint(Line2d mid_line) const
+{
+  geometry_msgs::PointStamped msg;
+  msg.header.frame_id = lidar_frame_id_;
+  msg.header.stamp = ros::Time::now();
+
+  
+  msg.point.x = pure_pursuit_point_distance_;
+  msg.point.y = mid_line.getPointY(pure_pursuit_point_distance_);
+  msg.point.z = 0.0;
+
+  pure_pursuit_point_pub_.publish(msg);
 }
 
 //--------------------------------Line2d--------------------------------

@@ -27,6 +27,7 @@ void PclMidRowDetection::initialize()
   pure_pursuit_point_pub_ = nh_.advertise<geometry_msgs::PointStamped>("pure_pursuit_point", 1);
   right_row_enter_point_pub_ = nh_.advertise<geometry_msgs::PointStamped>("right_row_enter_point", 1);
   left_row_enter_point_pub_ = nh_.advertise<geometry_msgs::PointStamped>("left_row_enter_point", 1);
+  this_row_enter_point_pub_ = nh_.advertise<geometry_msgs::PointStamped>("this_row_enter_point", 1);
 
   input_pointcloud_sub_ = nh_.subscribe( input_cloud_topic_, 1, &PclMidRowDetection::inputCloudCallback, this);
 
@@ -104,6 +105,17 @@ void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
     temp_msg.point.z = 0.0;
     left_row_enter_point_pub_.publish(temp_msg);
   }
+
+  Eigen::Vector2d this_row_enter_point;
+  this_row_enter_point = (border_lines_.left_line_.max_point_ + border_lines_.right_line_.max_point_) / 2.0;
+  geometry_msgs::PointStamped temp_msg;
+  temp_msg.header.frame_id = lidar_frame_id_;
+  temp_msg.header.stamp = ros::Time::now();
+
+  temp_msg.point.x = this_row_enter_point.x();
+  temp_msg.point.y = this_row_enter_point.y();
+  temp_msg.point.z = 0.0;
+  this_row_enter_point_pub_.publish(temp_msg);
   
   mid_line.publish(marker_pub_mid_, lidar_frame_id_);
   publishPurePursuitPoint(mid_line);
@@ -219,12 +231,15 @@ RowBorders PclMidRowDetection::selectBorders(const std::vector<Line2d> &lines) c
   double inf = 9999;
   double min_positive_y = inf;
   double max_negative_y = -inf;
-
+  static constexpr auto y_dist_threshold = 3;
+  std::cout << "lines.size() = " << lines.size() << "\n";
   for(uint32_t i = 0; i < lines.size(); i++)
   {
     double current_y = lines[i].getPointY(0.0);
-    
+    std::cout << "current_y = " << current_y << "\n";
     if(abs(lines[i].angle_deg_) > max_line_angle_deg_) //Disregard lines with large angles
+      continue;
+    if(current_y > y_dist_threshold)
       continue;
 
     //Is the current line the closest line to the left?        
@@ -241,6 +256,10 @@ RowBorders PclMidRowDetection::selectBorders(const std::vector<Line2d> &lines) c
       right_line_index = i;
     } 
   }
+  std::cout << "max_negative_y = " << max_negative_y << "\n";
+  std::cout << "min_positive_y = " << min_positive_y << "\n";
+  std::cout << "current_y_right = " << lines[right_line_index].getPointY(0.0) << "\n";
+  std::cout << "current_y_left = " << lines[left_line_index].getPointY(0.0) << "\n";
 
   if (right_line_index == -1 || left_line_index == -1) //right or left line don't exist
     return RowBorders();
@@ -255,6 +274,7 @@ RowBorders PclMidRowDetection::selectNextRowBorders(const std::vector<Line2d> &l
   double inf = 9999;
   double min_positive_y = inf;
   double max_negative_y = -inf;
+  static constexpr auto y_dist_threshold = 2;
 
   double next_line_threshold = 0.1;
 
@@ -263,6 +283,8 @@ RowBorders PclMidRowDetection::selectNextRowBorders(const std::vector<Line2d> &l
     double current_y = lines[i].getPointY(0.0);
     
     if(abs(lines[i].angle_deg_) > max_line_angle_deg_) //Disregard lines with large angles
+      continue;
+    if(current_y > y_dist_threshold)
       continue;
 
     //Is the current line the closest line to the left?        

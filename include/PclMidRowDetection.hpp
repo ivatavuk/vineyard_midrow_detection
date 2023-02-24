@@ -99,6 +99,7 @@ private:
                   marker_pub_next_left_, marker_pub_next_right_,
                   n_detected_lines_pub_;
   ros::Publisher  pure_pursuit_point_pub_, right_row_enter_point_pub_,
+                  this_row_enter_point_pub_,
                   left_row_enter_point_pub_;
   ros::Subscriber input_pointcloud_sub_;
 

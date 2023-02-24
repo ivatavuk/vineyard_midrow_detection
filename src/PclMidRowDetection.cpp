@@ -21,6 +21,8 @@ void PclMidRowDetection::initialize()
   marker_pub_mid_ = nh_.advertise<visualization_msgs::Marker>("middle_line", 1);
   marker_pub_left_ = nh_.advertise<visualization_msgs::Marker>("left_line", 1);
   marker_pub_right_ = nh_.advertise<visualization_msgs::Marker>("right_line", 1);
+  marker_pub_next_left_ = nh_.advertise<visualization_msgs::Marker>("next_left_line", 1);
+  marker_pub_next_right_ = nh_.advertise<visualization_msgs::Marker>("next_right_line", 1);
 
   pure_pursuit_point_pub_ = nh_.advertise<geometry_msgs::PointStamped>("pure_pursuit_point", 1);
 
@@ -54,6 +56,7 @@ void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
   publishInt32(n_detected_lines_pub_, detected_lines_.size());
   
   border_lines_ = selectBorders(detected_lines_);
+  next_border_lines_ = selectNextRowBorders(detected_lines_, border_lines_);
   
   if (border_lines_.isEmpty()) return; //TODO: publish something
   
@@ -61,6 +64,17 @@ void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
 
   border_lines_.right_line_.publish(marker_pub_right_, lidar_frame_id_);
   border_lines_.left_line_.publish(marker_pub_left_, lidar_frame_id_);
+  if( next_border_lines_.right_line_.angle_deg_ != border_lines_.right_line_.angle_deg_ && 
+      next_border_lines_.right_line_.point_ != border_lines_.right_line_.point_ )
+  {
+    next_border_lines_.right_line_.publish(marker_pub_next_right_, lidar_frame_id_);
+  }
+  if( next_border_lines_.left_line_.angle_deg_ != border_lines_.left_line_.angle_deg_ && 
+      next_border_lines_.left_line_.point_ != border_lines_.left_line_.point_ )
+  {
+    next_border_lines_.left_line_.publish(marker_pub_next_left_, lidar_frame_id_);
+  }
+  
   mid_line.publish(marker_pub_mid_, lidar_frame_id_);
   publishPurePursuitPoint(mid_line);
 }
@@ -193,6 +207,47 @@ RowBorders PclMidRowDetection::selectBorders(const std::vector<Line2d> &lines) c
   else 
     return RowBorders(lines[right_line_index], lines[left_line_index]);
 }
+
+RowBorders PclMidRowDetection::selectNextRowBorders(const std::vector<Line2d> &lines, const RowBorders &row_borders) const
+{
+  int right_line_index = -1;
+  int left_line_index = -1;
+  double inf = 9999;
+  double min_positive_y = inf;
+  double max_negative_y = -inf;
+
+  double next_line_threshold = 0.1;
+
+  for(uint32_t i = 0; i < lines.size(); i++)
+  {
+    double current_y = lines[i].getPointY(0.0);
+    
+    if(abs(lines[i].angle_deg_) > max_line_angle_deg_) //Disregard lines with large angles
+      continue;
+
+    //Is the current line the closest line to the left?        
+    if (current_y < row_borders.left_line_.getPointY(0.0) - next_line_threshold && current_y > max_negative_y)
+    {
+      max_negative_y = current_y;
+      left_line_index = i;
+    } 
+    
+    //Is the current line the closest line to the right?
+    if (current_y > row_borders.right_line_.getPointY(0.0) + next_line_threshold && current_y < min_positive_y) 
+    {
+      min_positive_y = current_y;
+      right_line_index = i;
+    } 
+  }
+
+  if (right_line_index == -1) //right line doesn't exist
+    return RowBorders(row_borders.right_line_, lines[left_line_index]);
+  if (left_line_index == -1) //right line doesn't exist
+    return RowBorders(lines[right_line_index], row_borders.left_line_);
+  
+  return RowBorders(lines[right_line_index], lines[left_line_index]);
+}
+
 
 void PclMidRowDetection::extractIndices(PointCloudXYZ::Ptr pointcloud,
                                         pcl::PointIndices::Ptr indices) const

@@ -91,6 +91,7 @@ private:
   ros::NodeHandle nh_, nh_private_;
   ros::Publisher  filtered_cloud_pub_, flat_cloud_pub_, marker_pub_mid_, 
                   marker_pub_left_, marker_pub_right_,
+                  marker_pub_next_left_, marker_pub_next_right_,
                   n_detected_lines_pub_;
   ros::Publisher pure_pursuit_point_pub_;
   ros::Subscriber input_pointcloud_sub_;
@@ -112,13 +113,15 @@ private:
   sensor_msgs::PointCloud2 msgFromPcl(const PointCloudXYZ &input_cloud) const;
 
   std::vector<Line2d> detected_lines_;
-  RowBorders border_lines_;
+  RowBorders border_lines_, next_border_lines_;
 
   std::vector<Line2d> findLines(PointCloudXYZ::Ptr input_cloud) const;
   void extractIndices(PointCloudXYZ::Ptr pointcloud,
                       pcl::PointIndices::Ptr indices) const;
 
   RowBorders selectBorders(const std::vector<Line2d> &lines) const;
+
+  RowBorders selectNextRowBorders(const std::vector<Line2d> &lines, const RowBorders &row_borders) const;
 
   static void publishInt32(const ros::Publisher &int_pub, int input_int);
 

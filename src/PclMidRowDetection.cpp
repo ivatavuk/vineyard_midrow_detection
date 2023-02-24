@@ -25,6 +25,7 @@ void PclMidRowDetection::initialize()
   marker_pub_next_right_ = nh_.advertise<visualization_msgs::Marker>("next_right_line", 1);
 
   pure_pursuit_point_pub_ = nh_.advertise<geometry_msgs::PointStamped>("pure_pursuit_point", 1);
+  row_enter_point_pub_ = nh_.advertise<geometry_msgs::PointStamped>("row_enter_point", 1);
 
   input_pointcloud_sub_ = nh_.subscribe( input_cloud_topic_, 1, &PclMidRowDetection::inputCloudCallback, this);
 
@@ -68,12 +69,27 @@ void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
       next_border_lines_.right_line_.point_ != border_lines_.right_line_.point_ )
   {
     next_border_lines_.right_line_.publish(marker_pub_next_right_, lidar_frame_id_);
+    if(go_right_)
+    {
+      Eigen::Vector2d row_enter_point;
+      row_enter_point = (next_border_lines_.right_line_.max_point_ + border_lines_.right_line_.max_point_) / 2.0;
+      geometry_msgs::PointStamped temp_msg;
+      temp_msg.header.frame_id = lidar_frame_id_;
+      temp_msg.header.stamp = ros::Time::now();
+
+      
+      temp_msg.point.x = row_enter_point.x();
+      temp_msg.point.y = row_enter_point.y();
+      temp_msg.point.z = 0.0;
+      row_enter_point_pub_.publish(temp_msg);
+    }
   }
   if( next_border_lines_.left_line_.angle_deg_ != border_lines_.left_line_.angle_deg_ && 
       next_border_lines_.left_line_.point_ != border_lines_.left_line_.point_ )
   {
     next_border_lines_.left_line_.publish(marker_pub_next_left_, lidar_frame_id_);
   }
+
   
   mid_line.publish(marker_pub_mid_, lidar_frame_id_);
   publishPurePursuitPoint(mid_line);
@@ -160,8 +176,18 @@ std::vector<Line2d> PclMidRowDetection::findLines(PointCloudXYZ::Ptr input_cloud
     seg.setDistanceThreshold (line_distance_threshold_);
     seg.segment (*inliers, *coefficients);
 
+
+    pcl::PointXYZ min_point, max_point;
+    auto inlier_cloud = boost::make_shared<PointCloudXYZ>();
+    pcl::copyPointCloud (*temp_cloud, *inliers, *inlier_cloud);
+    pcl::getMinMax3D (*inlier_cloud, min_point, max_point);
+    Eigen::Vector2d min_point_eigen, max_point_eigen;
+    min_point_eigen << min_point.x, min_point.y;
+    max_point_eigen << max_point.x, max_point.y;
+
     Line2d temp_line( Eigen::Vector2d(coefficients->values[0], coefficients->values[1]),
-                      Eigen::Vector2d(coefficients->values[3], coefficients->values[4]) ); 
+                      Eigen::Vector2d(coefficients->values[3], coefficients->values[4]),
+                      max_point_eigen, min_point_eigen ); 
 
     temp_lines.push_back(temp_line);
 
@@ -277,6 +303,14 @@ void PclMidRowDetection::publishPurePursuitPoint(Line2d mid_line) const
 Line2d::Line2d() {};
 Line2d::Line2d( Eigen::Vector2d point_in, Eigen::Vector2d direction_in) 
   : point_(std::move(point_in)), direction_(std::move(direction_in))  
+{
+  calcAngleFromDirection();
+}
+
+Line2d::Line2d( Eigen::Vector2d point_in, Eigen::Vector2d direction_in, 
+                Eigen::Vector2d max_point, Eigen::Vector2d min_point )
+: point_(std::move(point_in)), direction_(std::move(direction_in)),
+  max_point_(max_point), min_point_(min_point)
 {
   calcAngleFromDirection();
 }

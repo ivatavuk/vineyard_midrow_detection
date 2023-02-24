@@ -6,6 +6,8 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/filters/crop_box.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/common/common.h>
 
 #include <pcl/segmentation/sac_segmentation.h>
 
@@ -53,9 +55,12 @@ struct Line2d
   Eigen::Vector2d point_;
   Eigen::Vector2d direction_;
   double angle_deg_;
+  Eigen::Vector2d max_point_, min_point_;
 
   Line2d();
   Line2d( Eigen::Vector2d point_in, Eigen::Vector2d direction_in);
+  Line2d( Eigen::Vector2d point_in, Eigen::Vector2d direction_in, 
+          Eigen::Vector2d max_point, Eigen::Vector2d min_point );
   void calcAngleFromDirection();
   double getPointY(double x) const;
   void publish(const ros::Publisher &marker_pub, const std::string &frame_id, double marker_line_length = 6.0) const;
@@ -93,7 +98,7 @@ private:
                   marker_pub_left_, marker_pub_right_,
                   marker_pub_next_left_, marker_pub_next_right_,
                   n_detected_lines_pub_;
-  ros::Publisher pure_pursuit_point_pub_;
+  ros::Publisher pure_pursuit_point_pub_, row_enter_point_pub_;
   ros::Subscriber input_pointcloud_sub_;
 
   std::string input_cloud_topic_;
@@ -129,6 +134,8 @@ private:
   void updateReconfigurableParams();
 
   void publishPurePursuitPoint(Line2d mid_line) const;
+
+  static constexpr bool go_right_ = true;
 };
 
 #endif /* PCLMIDROWDETECTION_HPP */

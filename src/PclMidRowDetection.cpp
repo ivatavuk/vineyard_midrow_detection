@@ -271,7 +271,7 @@ RowBorders PclMidRowDetection::selectNextRowBorders(const std::vector<Line2d> &l
       max_negative_y = current_y;
       left_line_index = i;
     } 
-    
+
     //Is the current line the closest line to the right?
     if (current_y > row_borders.right_line_.getPointY(0.0) + next_line_threshold && current_y < min_positive_y) 
     {
@@ -279,7 +279,8 @@ RowBorders PclMidRowDetection::selectNextRowBorders(const std::vector<Line2d> &l
       right_line_index = i;
     } 
   }
-
+  if (lines.size() == 0) 
+    return RowBorders();
   if (right_line_index == -1) //right line doesn't exist
     return RowBorders(row_borders.right_line_, lines[left_line_index]);
   if (left_line_index == -1) //right line doesn't exist

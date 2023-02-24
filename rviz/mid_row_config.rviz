@@ -162,6 +162,26 @@ Visualization Manager:
       Topic: /pure_pursuit_point
       Unreliable: false
       Value: true
+    - Alpha: 1
+      Class: rviz/PointStamped
+      Color: 204; 41; 204
+      Enabled: true
+      History Length: 1
+      Name: PointStamped
+      Radius: 0.20000000298023224
+      Topic: /right_row_enter_point
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Class: rviz/PointStamped
+      Color: 204; 41; 204
+      Enabled: true
+      History Length: 1
+      Name: PointStamped
+      Radius: 0.20000000298023224
+      Topic: /left_row_enter_point
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 85; 87; 83
@@ -190,25 +210,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 6.780766487121582
+      Distance: 7.665700435638428
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.17090368270874023
-        Y: -0.47384607791900635
+        X: -2.077877998352051
+        Y: -0.5167135000228882
         Z: 1.9424501260800753e-6
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4297974705696106
+      Pitch: 0.5997961163520813
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 3.590378761291504
+      Yaw: 3.930382490158081
     Saved: ~
 Window Geometry:
   Displays:

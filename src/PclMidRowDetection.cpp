@@ -68,57 +68,22 @@ void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
   border_lines_.right_line_.publish(marker_pub_right_, lidar_frame_id_);
   border_lines_.left_line_.publish(marker_pub_left_, lidar_frame_id_);
 
-  bool detected_next_right_line = 
-    next_border_lines_.right_line_.angle_deg_ != border_lines_.right_line_.angle_deg_ && 
-    next_border_lines_.right_line_.point_ != border_lines_.right_line_.point_;
-
-  bool detected_next_left_line = 
-    next_border_lines_.left_line_.angle_deg_ != border_lines_.left_line_.angle_deg_ && 
-    next_border_lines_.left_line_.point_ != border_lines_.left_line_.point_;
-    
-  if( detected_next_right_line )
+  if( detected_next_right_line_ )
   {
-    next_border_lines_.right_line_.publish(marker_pub_next_right_, lidar_frame_id_);
-  
-    Eigen::Vector2d right_row_enter_point;
-    right_row_enter_point = (next_border_lines_.right_line_.max_point_ + border_lines_.right_line_.max_point_) / 2.0;
-    geometry_msgs::PointStamped temp_msg;
-    temp_msg.header.frame_id = lidar_frame_id_;
-    temp_msg.header.stamp = ros::Time::now();
-
-    temp_msg.point.x = right_row_enter_point.x();
-    temp_msg.point.y = right_row_enter_point.y();
-    temp_msg.point.z = 0.0;
-    right_row_enter_point_pub_.publish(temp_msg);
+    publishEnterRowLine (right_row_enter_point_pub_, border_lines_.right_line_, next_border_lines_.right_line_);
   }
-  if( detected_next_left_line )
+  if( detected_next_left_line_ )
   {
-    Eigen::Vector2d left_row_enter_point;
-    left_row_enter_point = (next_border_lines_.left_line_.max_point_ + border_lines_.left_line_.max_point_) / 2.0;
-    next_border_lines_.left_line_.publish(marker_pub_next_left_, lidar_frame_id_);
-    geometry_msgs::PointStamped temp_msg;
-    temp_msg.header.frame_id = lidar_frame_id_;
-    temp_msg.header.stamp = ros::Time::now();
-
-    temp_msg.point.x = left_row_enter_point.x();
-    temp_msg.point.y = left_row_enter_point.y();
-    temp_msg.point.z = 0.0;
-    left_row_enter_point_pub_.publish(temp_msg);
+    publishEnterRowLine (left_row_enter_point_pub_, border_lines_.left_line_, next_border_lines_.left_line_);
   }
 
-  Eigen::Vector2d this_row_enter_point;
-  this_row_enter_point = (border_lines_.left_line_.max_point_ + border_lines_.right_line_.max_point_) / 2.0;
-  geometry_msgs::PointStamped temp_msg;
-  temp_msg.header.frame_id = lidar_frame_id_;
-  temp_msg.header.stamp = ros::Time::now();
-
-  temp_msg.point.x = this_row_enter_point.x();
-  temp_msg.point.y = this_row_enter_point.y();
-  temp_msg.point.z = 0.0;
-  this_row_enter_point_pub_.publish(temp_msg);
+  publishEnterRowLine (this_row_enter_point_pub_, border_lines_.left_line_, border_lines_.right_line_);
   
   mid_line.publish(marker_pub_mid_, lidar_frame_id_);
   publishPurePursuitPoint(mid_line);
+
+  detected_next_left_line_ = false;
+  detected_next_right_line_ = false;
 }
 
 void PclMidRowDetection::inputCloudCallback (const sensor_msgs::PointCloud2ConstPtr &ros_msg)
@@ -232,11 +197,9 @@ RowBorders PclMidRowDetection::selectBorders(const std::vector<Line2d> &lines) c
   double min_positive_y = inf;
   double max_negative_y = -inf;
   static constexpr auto y_dist_threshold = 3;
-  std::cout << "lines.size() = " << lines.size() << "\n";
   for(uint32_t i = 0; i < lines.size(); i++)
   {
     double current_y = lines[i].getPointY(0.0);
-    std::cout << "current_y = " << current_y << "\n";
     if(abs(lines[i].angle_deg_) > max_line_angle_deg_) //Disregard lines with large angles
       continue;
     if(current_y > y_dist_threshold)
@@ -256,10 +219,6 @@ RowBorders PclMidRowDetection::selectBorders(const std::vector<Line2d> &lines) c
       right_line_index = i;
     } 
   }
-  std::cout << "max_negative_y = " << max_negative_y << "\n";
-  std::cout << "min_positive_y = " << min_positive_y << "\n";
-  std::cout << "current_y_right = " << lines[right_line_index].getPointY(0.0) << "\n";
-  std::cout << "current_y_left = " << lines[left_line_index].getPointY(0.0) << "\n";
 
   if (right_line_index == -1 || left_line_index == -1) //right or left line don't exist
     return RowBorders();
@@ -267,14 +226,13 @@ RowBorders PclMidRowDetection::selectBorders(const std::vector<Line2d> &lines) c
     return RowBorders(lines[right_line_index], lines[left_line_index]);
 }
 
-RowBorders PclMidRowDetection::selectNextRowBorders(const std::vector<Line2d> &lines, const RowBorders &row_borders) const
+RowBorders PclMidRowDetection::selectNextRowBorders(const std::vector<Line2d> &lines, const RowBorders &row_borders)
 {
   int right_line_index = -1;
   int left_line_index = -1;
   double inf = 9999;
   double min_positive_y = inf;
   double max_negative_y = -inf;
-  static constexpr auto y_dist_threshold = 2;
 
   double next_line_threshold = 0.1;
 
@@ -284,12 +242,11 @@ RowBorders PclMidRowDetection::selectNextRowBorders(const std::vector<Line2d> &l
     
     if(abs(lines[i].angle_deg_) > max_line_angle_deg_) //Disregard lines with large angles
       continue;
-    if(current_y > y_dist_threshold)
-      continue;
 
     //Is the current line the closest line to the left?        
     if (current_y < row_borders.left_line_.getPointY(0.0) - next_line_threshold && current_y > max_negative_y)
     {
+      detected_next_left_line_ = true;
       max_negative_y = current_y;
       left_line_index = i;
     } 
@@ -297,6 +254,7 @@ RowBorders PclMidRowDetection::selectNextRowBorders(const std::vector<Line2d> &l
     //Is the current line the closest line to the right?
     if (current_y > row_borders.right_line_.getPointY(0.0) + next_line_threshold && current_y < min_positive_y) 
     {
+      detected_next_right_line_ = true;
       min_positive_y = current_y;
       right_line_index = i;
     } 
@@ -334,6 +292,21 @@ void PclMidRowDetection::publishPurePursuitPoint(Line2d mid_line) const
   msg.point.z = 0.0;
 
   pure_pursuit_point_pub_.publish(msg);
+}
+
+
+void PclMidRowDetection::publishEnterRowLine(const ros::Publisher &pub, Line2d left_line, Line2d right_line)
+{
+  Eigen::Vector2d enter_point;
+  enter_point = (left_line.max_point_ + right_line.max_point_) / 2.0;
+  geometry_msgs::PointStamped temp_msg;
+  temp_msg.header.frame_id = lidar_frame_id_;
+  temp_msg.header.stamp = ros::Time::now();
+
+  temp_msg.point.x = enter_point.x();
+  temp_msg.point.y = enter_point.y();
+  temp_msg.point.z = 0.0;
+  pub.publish(temp_msg);
 }
 
 //--------------------------------Line2d--------------------------------

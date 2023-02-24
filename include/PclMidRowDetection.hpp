@@ -128,7 +128,7 @@ private:
 
   RowBorders selectBorders(const std::vector<Line2d> &lines) const;
 
-  RowBorders selectNextRowBorders(const std::vector<Line2d> &lines, const RowBorders &row_borders) const;
+  RowBorders selectNextRowBorders(const std::vector<Line2d> &lines, const RowBorders &row_borders);
 
   static void publishInt32(const ros::Publisher &int_pub, int input_int);
 
@@ -136,8 +136,10 @@ private:
   void updateReconfigurableParams();
 
   void publishPurePursuitPoint(Line2d mid_line) const;
+  bool detected_next_right_line_ = false;
+  bool detected_next_left_line_ = false;
 
-  static constexpr bool go_right_ = true;
+  void publishEnterRowLine(const ros::Publisher &pub, Line2d left_line, Line2d right_line);
 };
 
 #endif /* PCLMIDROWDETECTION_HPP */

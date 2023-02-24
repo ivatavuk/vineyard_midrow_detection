@@ -297,8 +297,11 @@ void PclMidRowDetection::publishPurePursuitPoint(Line2d mid_line) const
 
 void PclMidRowDetection::publishEnterRowLine(const ros::Publisher &pub, Line2d left_line, Line2d right_line)
 {
-  Eigen::Vector2d enter_point;
-  enter_point = (left_line.max_point_ + right_line.max_point_) / 2.0;
+  Eigen::Vector2d max_center_point = (left_line.max_point_ + right_line.max_point_) / 2.0;
+
+  Line2d mid_line = RowBorders(right_line, left_line).getMidLine();
+  Eigen::Vector2d enter_point = max_center_point;
+  enter_point.y() = mid_line.getPointY(max_center_point.x());
   geometry_msgs::PointStamped temp_msg;
   temp_msg.header.frame_id = lidar_frame_id_;
   temp_msg.header.stamp = ros::Time::now();

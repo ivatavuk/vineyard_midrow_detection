@@ -25,7 +25,8 @@ void PclMidRowDetection::initialize()
   marker_pub_next_right_ = nh_.advertise<visualization_msgs::Marker>("next_right_line", 1);
 
   pure_pursuit_point_pub_ = nh_.advertise<geometry_msgs::PointStamped>("pure_pursuit_point", 1);
-  row_enter_point_pub_ = nh_.advertise<geometry_msgs::PointStamped>("row_enter_point", 1);
+  right_row_enter_point_pub_ = nh_.advertise<geometry_msgs::PointStamped>("right_row_enter_point", 1);
+  left_row_enter_point_pub_ = nh_.advertise<geometry_msgs::PointStamped>("left_row_enter_point", 1);
 
   input_pointcloud_sub_ = nh_.subscribe( input_cloud_topic_, 1, &PclMidRowDetection::inputCloudCallback, this);
 
@@ -65,31 +66,44 @@ void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
 
   border_lines_.right_line_.publish(marker_pub_right_, lidar_frame_id_);
   border_lines_.left_line_.publish(marker_pub_left_, lidar_frame_id_);
-  if( next_border_lines_.right_line_.angle_deg_ != border_lines_.right_line_.angle_deg_ && 
-      next_border_lines_.right_line_.point_ != border_lines_.right_line_.point_ )
+
+  bool detected_next_right_line = 
+    next_border_lines_.right_line_.angle_deg_ != border_lines_.right_line_.angle_deg_ && 
+    next_border_lines_.right_line_.point_ != border_lines_.right_line_.point_;
+
+  bool detected_next_left_line = 
+    next_border_lines_.left_line_.angle_deg_ != border_lines_.left_line_.angle_deg_ && 
+    next_border_lines_.left_line_.point_ != border_lines_.left_line_.point_;
+    
+  if( detected_next_right_line )
   {
     next_border_lines_.right_line_.publish(marker_pub_next_right_, lidar_frame_id_);
-    if(go_right_)
-    {
-      Eigen::Vector2d row_enter_point;
-      row_enter_point = (next_border_lines_.right_line_.max_point_ + border_lines_.right_line_.max_point_) / 2.0;
-      geometry_msgs::PointStamped temp_msg;
-      temp_msg.header.frame_id = lidar_frame_id_;
-      temp_msg.header.stamp = ros::Time::now();
+  
+    Eigen::Vector2d right_row_enter_point;
+    right_row_enter_point = (next_border_lines_.right_line_.max_point_ + border_lines_.right_line_.max_point_) / 2.0;
+    geometry_msgs::PointStamped temp_msg;
+    temp_msg.header.frame_id = lidar_frame_id_;
+    temp_msg.header.stamp = ros::Time::now();
 
-      
-      temp_msg.point.x = row_enter_point.x();
-      temp_msg.point.y = row_enter_point.y();
-      temp_msg.point.z = 0.0;
-      row_enter_point_pub_.publish(temp_msg);
-    }
+    temp_msg.point.x = right_row_enter_point.x();
+    temp_msg.point.y = right_row_enter_point.y();
+    temp_msg.point.z = 0.0;
+    right_row_enter_point_pub_.publish(temp_msg);
   }
-  if( next_border_lines_.left_line_.angle_deg_ != border_lines_.left_line_.angle_deg_ && 
-      next_border_lines_.left_line_.point_ != border_lines_.left_line_.point_ )
+  if( detected_next_left_line )
   {
+    Eigen::Vector2d left_row_enter_point;
+    left_row_enter_point = (next_border_lines_.left_line_.max_point_ + border_lines_.left_line_.max_point_) / 2.0;
     next_border_lines_.left_line_.publish(marker_pub_next_left_, lidar_frame_id_);
-  }
+    geometry_msgs::PointStamped temp_msg;
+    temp_msg.header.frame_id = lidar_frame_id_;
+    temp_msg.header.stamp = ros::Time::now();
 
+    temp_msg.point.x = left_row_enter_point.x();
+    temp_msg.point.y = left_row_enter_point.y();
+    temp_msg.point.z = 0.0;
+    left_row_enter_point_pub_.publish(temp_msg);
+  }
   
   mid_line.publish(marker_pub_mid_, lidar_frame_id_);
   publishPurePursuitPoint(mid_line);

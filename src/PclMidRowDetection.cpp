@@ -234,12 +234,10 @@ RowBorders PclMidRowDetection::selectNextRowBorders(const std::vector<Line2d> &l
   double min_positive_y = inf;
   double max_negative_y = -inf;
 
-  double next_line_threshold = 0.1;
-
+  double next_line_threshold = 0.5;
   for(uint32_t i = 0; i < lines.size(); i++)
   {
     double current_y = lines[i].getPointY(0.0);
-    
     if(abs(lines[i].angle_deg_) > max_line_angle_deg_) //Disregard lines with large angles
       continue;
 

@@ -74,6 +74,7 @@ struct RowBorders
   RowBorders(Line2d right_line, Line2d left_line);
   bool isEmpty() const { return empty_; };
   Line2d getMidLine() const;
+  Line2d getTaskLine(double percentage) const;
 };
 
 class PclMidRowDetection
@@ -101,6 +102,9 @@ private:
   ros::Publisher  pure_pursuit_point_pub_, right_row_enter_point_pub_,
                   this_row_enter_point_pub_,
                   left_row_enter_point_pub_;
+  
+  ros::Publisher  task_pure_pursuit_point_pub_, task_marker_pub_;
+
   ros::Subscriber input_pointcloud_sub_;
 
   std::string input_cloud_topic_;

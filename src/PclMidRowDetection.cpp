@@ -29,6 +29,9 @@ void PclMidRowDetection::initialize()
   left_row_enter_point_pub_ = nh_.advertise<geometry_msgs::PointStamped>("left_row_enter_point", 1);
   this_row_enter_point_pub_ = nh_.advertise<geometry_msgs::PointStamped>("this_row_enter_point", 1);
 
+  task_marker_pub_ = nh_.advertise<visualization_msgs::Marker>("task_line", 1);
+  task_pure_pursuit_point_pub_ = nh_.advertise<geometry_msgs::PointStamped>("task_pure_pursuit_point", 1);
+
   input_pointcloud_sub_ = nh_.subscribe( input_cloud_topic_, 1, &PclMidRowDetection::inputCloudCallback, this);
 
   control_timer_ = nh_.createTimer(ros::Duration(ros::Rate(rate_)), &PclMidRowDetection::loop, this);
@@ -84,6 +87,10 @@ void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
 
   detected_next_left_line_ = false;
   detected_next_right_line_ = false;
+
+  const double task_line_percentage = 0.8;
+  Line2d task_line = border_lines_.getTaskLine(task_line_percentage);
+  task_line.publish(task_marker_pub_, lidar_frame_id_);
 }
 
 void PclMidRowDetection::inputCloudCallback (const sensor_msgs::PointCloud2ConstPtr &ros_msg)
@@ -387,4 +394,13 @@ Line2d RowBorders::getMidLine() const
                   Eigen::Vector2d((right_line_.direction_(0) + left_line_.direction_(0)) / 2.0,
                                   (right_line_.direction_(1) + left_line_.direction_(1)) / 2.0));
   return mid_line;
+}
+
+Line2d RowBorders::getTaskLine(double percentage) const
+{
+  Line2d task_line( Eigen::Vector2d(percentage * right_line_.point_(0) + 1 / percentage * left_line_.point_(0),
+                                    percentage * right_line_.point_(1) + 1 / percentage * left_line_.point_(1)),
+                    Eigen::Vector2d(percentage * right_line_.direction_(0) + 1 / percentage * left_line_.direction_(0),
+                                    percentage * right_line_.direction_(1) + 1 / percentage * left_line_.direction_(1)) );
+  return task_line;
 }

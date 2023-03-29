@@ -39,6 +39,8 @@ void PclMidRowDetection::initialize()
   n_detected_lines_pub_ = nh_.advertise<std_msgs::Int32>("number_of_detected_lines", 1);
   line_distance_threshold_ = 0.4;
   pure_pursuit_point_distance_ = 1.5;
+
+  nav_mode_sub_ = nh_.subscribe( "/vineyard_midrow_detection/nav_mode", 1, &PclMidRowDetection::navModeCallback, this);
 }
 
 void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
@@ -88,11 +90,11 @@ void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
   detected_next_right_line_ = false;
 
   double task_line_percentage;
-  if(nav_mode_ == MIDROW_NAV)
+  if(nav_mode_ == MIDROW)
     task_line_percentage = 0.5;
-  if(nav_mode_ == SPRAYING_NAV)
+  if(nav_mode_ == SPRAYING)
     task_line_percentage = spraying_task_line_percentage_;
-  if(nav_mode_ == SUCKERING_NAV)
+  if(nav_mode_ == SUCKERING)
     task_line_percentage = suckering_task_line_percentage_;
 
   Line2d task_line = border_lines_.getTaskLine(task_line_percentage);
@@ -325,6 +327,27 @@ void PclMidRowDetection::publishEnterRowLine(const ros::Publisher &pub, Line2d l
   pub.publish(temp_msg);
 }
 
+void PclMidRowDetection::navModeCallback(const std_msgs::String &ros_msg)
+{
+  std::cout << "navModeCallback: received data = " << ros_msg.data << "\n";
+  if(ros_msg.data == "SPRAYING")
+  {
+    nav_mode_ = SPRAYING;
+    return;
+  }
+  if(ros_msg.data == "SUCKERING")
+  {
+    nav_mode_ = SUCKERING;
+    return;
+  }
+  if(ros_msg.data == "MIDROW")
+  {
+    nav_mode_ = MIDROW;
+    return;
+  }
+  std::cout << "navModeCallback: Unknown nav mode received!\n";
+}
+
 //--------------------------------Line2d--------------------------------
 Line2d::Line2d() {};
 Line2d::Line2d( Eigen::Vector2d point_in, Eigen::Vector2d direction_in) 
@@ -412,3 +435,4 @@ Line2d RowBorders::getTaskLine(double percentage) const
                                     percentage * right_line_.direction_(1) + (1 - percentage) * left_line_.direction_(1)) );
   return task_line;
 }
+

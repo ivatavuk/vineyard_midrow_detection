@@ -24,6 +24,7 @@
 #include <visualization_msgs/Marker.h>
 #include <geometry_msgs/PointStamped.h>
 #include <std_msgs/Int32.h>
+#include <std_msgs/String.h>
 
 #include "string"
 #include "reconfigure_handler.hpp"
@@ -147,15 +148,20 @@ private:
 
   enum NavMode
   {
-    MIDROW_NAV,
-    SPRAYING_NAV,
-    SUCKERING_NAV
+    MIDROW,
+    SPRAYING,
+    SUCKERING
   };
 
-  NavMode nav_mode_ = MIDROW_NAV;
+  NavMode nav_mode_ = MIDROW;
 
-  static constexpr auto spraying_task_line_percentage_ = 0.65;
+  static constexpr auto spraying_task_line_percentage_ = 0.35;
   static constexpr auto suckering_task_line_percentage_ = 0.65;
+
+  ros::Subscriber nav_mode_sub_;
+
+
+  void navModeCallback(const std_msgs::String &ros_msg);
 };
 
 #endif /* PCLMIDROWDETECTION_HPP */

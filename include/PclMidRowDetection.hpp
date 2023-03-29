@@ -25,6 +25,7 @@
 #include <geometry_msgs/PointStamped.h>
 #include <std_msgs/Int32.h>
 #include <std_msgs/String.h>
+#include <std_msgs/Float64.h>
 
 #include "string"
 #include "reconfigure_handler.hpp"
@@ -162,6 +163,8 @@ private:
 
 
   void navModeCallback(const std_msgs::String &ros_msg);
+
+  ros::Publisher distance_to_right_line_pub_, distance_to_left_line_pub_;
 };
 
 #endif /* PCLMIDROWDETECTION_HPP */

@@ -41,6 +41,8 @@ void PclMidRowDetection::initialize()
   pure_pursuit_point_distance_ = 1.5;
 
   nav_mode_sub_ = nh_.subscribe( "/vineyard_midrow_detection/nav_mode", 1, &PclMidRowDetection::navModeCallback, this);
+  distance_to_right_line_pub_ = nh_.advertise<std_msgs::Float64>("/vineyard_midrow_detection/distance_to_right_line", 1);
+  distance_to_left_line_pub_ = nh_.advertise<std_msgs::Float64>("/vineyard_midrow_detection/distance_to_left_line", 1);
 }
 
 void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
@@ -72,6 +74,14 @@ void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
 
   border_lines_.right_line_.publish(marker_pub_right_, lidar_frame_id_);
   border_lines_.left_line_.publish(marker_pub_left_, lidar_frame_id_);
+
+
+  //publish distance to right and left line
+  std_msgs::Float64 float_msg;
+  float_msg.data = abs(border_lines_.left_line_.getPointY(0.0));
+  distance_to_left_line_pub_.publish(float_msg);
+  float_msg.data = abs(border_lines_.right_line_.getPointY(0.0));
+  distance_to_right_line_pub_.publish(float_msg);
 
   if( detected_next_right_line_ )
   {

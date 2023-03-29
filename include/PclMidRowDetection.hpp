@@ -139,11 +139,23 @@ private:
   ros_util::ReconfigureHandler<reconfigureCfg> reconfigure_handler_;
   void updateReconfigurableParams();
 
-  void publishPurePursuitPoint(Line2d mid_line) const;
+  void publishPurePursuitPoint(Line2d line) const;
   bool detected_next_right_line_ = false;
   bool detected_next_left_line_ = false;
 
   void publishEnterRowLine(const ros::Publisher &pub, Line2d left_line, Line2d right_line);
+
+  enum NavMode
+  {
+    MIDROW_NAV,
+    SPRAYING_NAV,
+    SUCKERING_NAV
+  };
+
+  NavMode nav_mode_ = MIDROW_NAV;
+
+  static constexpr auto spraying_task_line_percentage_ = 0.65;
+  static constexpr auto suckering_task_line_percentage_ = 0.65;
 };
 
 #endif /* PCLMIDROWDETECTION_HPP */

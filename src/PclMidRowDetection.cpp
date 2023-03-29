@@ -83,14 +83,22 @@ void PclMidRowDetection::loop(const ros::TimerEvent &/* unused */)
   publishEnterRowLine (this_row_enter_point_pub_, border_lines_.left_line_, border_lines_.right_line_);
   
   mid_line.publish(marker_pub_mid_, lidar_frame_id_);
-  publishPurePursuitPoint(mid_line);
 
   detected_next_left_line_ = false;
   detected_next_right_line_ = false;
 
-  const double task_line_percentage = 0.8;
+  double task_line_percentage;
+  if(nav_mode_ == MIDROW_NAV)
+    task_line_percentage = 0.5;
+  if(nav_mode_ == SPRAYING_NAV)
+    task_line_percentage = spraying_task_line_percentage_;
+  if(nav_mode_ == SUCKERING_NAV)
+    task_line_percentage = suckering_task_line_percentage_;
+
   Line2d task_line = border_lines_.getTaskLine(task_line_percentage);
   task_line.publish(task_marker_pub_, lidar_frame_id_);
+  
+  publishPurePursuitPoint(task_line);
 }
 
 void PclMidRowDetection::inputCloudCallback (const sensor_msgs::PointCloud2ConstPtr &ros_msg)
@@ -285,7 +293,7 @@ void PclMidRowDetection::extractIndices(PointCloudXYZ::Ptr pointcloud,
   extract.filter(*pointcloud);
 }
 
-void PclMidRowDetection::publishPurePursuitPoint(Line2d mid_line) const
+void PclMidRowDetection::publishPurePursuitPoint(Line2d line) const
 {
   geometry_msgs::PointStamped msg;
   msg.header.frame_id = lidar_frame_id_;
@@ -293,7 +301,7 @@ void PclMidRowDetection::publishPurePursuitPoint(Line2d mid_line) const
 
   
   msg.point.x = pure_pursuit_point_distance_;
-  msg.point.y = mid_line.getPointY(pure_pursuit_point_distance_);
+  msg.point.y = line.getPointY(pure_pursuit_point_distance_);
   msg.point.z = 0.0;
 
   pure_pursuit_point_pub_.publish(msg);
@@ -398,9 +406,9 @@ Line2d RowBorders::getMidLine() const
 
 Line2d RowBorders::getTaskLine(double percentage) const
 {
-  Line2d task_line( Eigen::Vector2d(percentage * right_line_.point_(0) + 1 / percentage * left_line_.point_(0),
-                                    percentage * right_line_.point_(1) + 1 / percentage * left_line_.point_(1)),
-                    Eigen::Vector2d(percentage * right_line_.direction_(0) + 1 / percentage * left_line_.direction_(0),
-                                    percentage * right_line_.direction_(1) + 1 / percentage * left_line_.direction_(1)) );
+  Line2d task_line( Eigen::Vector2d(percentage * right_line_.point_(0) + (1 - percentage) * left_line_.point_(0),
+                                    percentage * right_line_.point_(1) + (1 - percentage) * left_line_.point_(1)),
+                    Eigen::Vector2d(percentage * right_line_.direction_(0) + (1 - percentage) * left_line_.direction_(0),
+                                    percentage * right_line_.direction_(1) + (1 - percentage) * left_line_.direction_(1)) );
   return task_line;
 }

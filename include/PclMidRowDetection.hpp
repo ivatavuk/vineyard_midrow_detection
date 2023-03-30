@@ -156,8 +156,8 @@ private:
 
   NavMode nav_mode_ = MIDROW;
 
-  static constexpr auto spraying_task_line_percentage_ = 0.35;
-  static constexpr auto suckering_task_line_percentage_ = 0.65;
+  static constexpr auto spraying_task_line_percentage_ = 0.65;
+  static constexpr auto suckering_task_line_percentage_ = 0.55;
 
   ros::Subscriber nav_mode_sub_;
 
